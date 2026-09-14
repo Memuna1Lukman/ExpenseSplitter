@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes:int
+    gemini_client_id:str
+    gemini_secret:str
     model_config = {'env_file': '.env'}
 
 

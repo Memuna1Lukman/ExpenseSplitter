@@ -8,7 +8,7 @@ from ..config import settings
 import urllib.parse
 from fastapi.responses import RedirectResponse
 import httpx
-
+import secrets
 router = APIRouter(
     tags= ["Authentication"],
     prefix="/auth"
@@ -58,7 +58,7 @@ def logout_user (
     return {"message": "Logout successful"}
 
 
-@router.post("/callback")
+@router.get("/callback")
 async def login_with_google(response:Response,code:str | None = None,error:str| None = None,db:Session = Depends(get_db)):
     if error :
         raise HTTPException(
@@ -112,7 +112,8 @@ async def login_with_google(response:Response,code:str | None = None,error:str| 
         check_user = db.query(models.Users).filter(models.Users.email == email).first()
         if not check_user:
             # Generate a dummy password or random hash for OAuth users
-            random_password = utils.hash_password(utils.generate_random_string())
+            random_raw_password = secrets.token_urlsafe(32)
+            random_password = utils.hash_password(random_raw_password)
             check_user = models.User(
                 email=email, username=username, password=random_password
             )

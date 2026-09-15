@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes:int
     gemini_client_id:str
     gemini_secret:str
+    redirect_uri:str
     model_config = {'env_file': '.env'}
 
 

@@ -1,4 +1,4 @@
-from fastapi import HTTPException,Depends,status,APIRouter,Response
+from fastapi import HTTPException,Depends,status,APIRouter,Response,BackgroundTasks
 from .. import models,utils,schemas,oauth
 from ..database import get_db
 from ..config import settings
@@ -152,3 +152,47 @@ def google_login():
     }
     google_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
     return RedirectResponse(url=google_url)
+
+
+# reset password post
+
+@router.post("/forgot-password")
+def forgot_password(
+    body:schemas.PasswordResetRequest,
+    background_tasks: BackgroundTasks,
+    db:Session = Depends(get_db)
+):
+    user = db.query(models.Users).filter(models.Users.email == body.email).first()
+    if user :
+        reset_token = oauth.create_password_rest_token(email =user.email)
+        reset_link = "nothing"
+        # Offload email dispatch to background task
+        # background_tasks.add_task(send_reset_email, user.email, reset_link)
+        print(f"Password reset link for {user.email}: {reset_link}")
+
+    return {"message": "If that email exists in our system, a password reset link has been sent."}
+
+
+@router.post("/")
+def reset_password(
+    body: schemas.PasswordResetSubmit,
+    db: Session = Depends(get_db)
+):
+    invalid_token_exception = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid or expired password reset token"
+    )
+    # Verify JWT and extract target email
+    email = oauth.verify_reset_password(body.token, invalid_token_exception)
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        raise invalid_token_exception
+    # Hash new password using your pwdlib helper and save to DB
+    hashed_pwd = utils.get_password_hash(body.new_password)
+    user.password = hashed_pwd
+    
+    db.add(user)
+    db.commit()
+
+    return {"message": "Password updated successfully"}
+

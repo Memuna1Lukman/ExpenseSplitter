@@ -60,3 +60,28 @@ def get_current_user(token:str=Depends(oauth2_scheme),db:Session=Depends(get_db)
     if user is None:
         raise credential_exception
     return user
+
+
+# this is my first time of learning how to reset a password
+def create_password_rest_token(email:str):
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.reset_token_expire_token)
+    to_encode = {
+        "sub":email,
+        "scope": "password_reset",
+        "exp": expire
+    }
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def verify_reset_password(token:str,credential_exception):
+    try:
+        payload=jwt.decode(token,SECRET_KEY,algorithms=[ALGORITHM])
+        email :str  = payload.get("sub")
+        scope: str = payload.get("scope")
+        # Verify scope to prevent access tokens from being used for password resets
+
+        if email is None or scope != "password_reset":
+           raise credential_exception
+        return email
+    except JWTError:
+        raise credential_exception

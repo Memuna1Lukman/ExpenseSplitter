@@ -61,3 +61,28 @@ class PostMembers(BaseModel):
         from_attributes = True  # lets Pydantic read from the ORM object
         
 
+class CreateExpense(BaseModel):
+    group_id: int
+    paid_by: int
+    amount:int
+    description: str
+    category:str
+
+
+class PostExpense(BaseModel):
+    id: int
+    group_id: int
+    paid_by: int
+    amount:int
+    description: str
+    category:str   
+    created_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True  # lets Pydantic read from the ORM object
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+class PasswordResetSubmit(BaseModel):
+    token: str
+    new_password: str

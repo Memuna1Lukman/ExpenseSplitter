@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     gemini_client_id:str
     gemini_secret:str
     redirect_uri:str
-    reset_token_expire_token:int
+    reset_token_expire_minutes:int
     model_config = {'env_file': '.env'}
 
 

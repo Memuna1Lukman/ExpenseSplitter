@@ -3,6 +3,8 @@ from .. import models,schemas,oauth
 from ..database import get_db
 from sqlalchemy.orm import Session
 from typing import List
+from ..split_expense import get_group_balances,simplify_balances
+
 
 router = APIRouter(
     tags=["Groups"],
@@ -175,3 +177,25 @@ def remove_member(id: int, user_id: int, db: Session = Depends(get_db), current_
     return 
 
     
+@router.get("/{id}/balances",response_model=List[schemas.BalanceOut])
+def get_group_balances_endpoint(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth.get_current_user)
+):
+    # does group exist?
+    group = db.query(models.Groups).filter(models.Groups.id == id).first()
+    if not group:
+        raise  HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Found"
+        )
+    is_member = db.query(models.GroupMembers).filter(
+        models.GroupMembers.group_id == id,
+        models.GroupMembers.user_id == current_user.id
+    ).first()
+    if not is_member:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member")
+    net = get_group_balances(id, db)
+    simplified = simplify_balances(net)
+    return simplified

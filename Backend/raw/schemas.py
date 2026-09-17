@@ -1,5 +1,7 @@
+from decimal import Decimal
+from enum import Enum
 from pydantic import BaseModel,EmailStr
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -61,13 +63,18 @@ class PostMembers(BaseModel):
         from_attributes = True  # lets Pydantic read from the ORM object
         
 
-class CreateExpense(BaseModel):
-    group_id: int
-    paid_by: int
+# class CreateExpense(BaseModel):
+#     group_id: int
+#     paid_by: int
+#     amount:int
+#     description: str
+#     category:str
+
+
+class CreateExpenseOne(BaseModel):
     amount:int
     description: str
     category:str
-
 
 class PostExpense(BaseModel):
     id: int
@@ -80,9 +87,74 @@ class PostExpense(BaseModel):
     class Config:
         from_attributes = True  # lets Pydantic read from the ORM object
 
+class PostExpenseOne(BaseModel):
+    id:int
+    paid_by: int
+    amount: int
+    description: str
+    category:str   
+    created_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True  # lets Pydantic read from the ORM object
+
+class SplitType(str, Enum):
+    equal = "equal"
+    exact = "exact"
+    percentage = "percentage"
+
+class SplitInput(BaseModel):
+    user_id: int
+    value: Optional[Decimal] = None
+    # for "equal": value is ignored, can be omitted
+    # for "exact": value = amount owed
+    # for "percentage": value = percentage (e.g. 30 for 30%)
+
+
+class CreateExpense(BaseModel):
+    group_id: Optional[int] = None
+    amount: Decimal
+    description: Optional[str] = None
+    category: Optional[str] = None
+    split_type: SplitType
+    splits: List[SplitInput]  # who is involved, and their value if exact/percentage
+
+class SplitOut(BaseModel):
+    user_id: int
+    amount_owed: Decimal
+    is_settled: bool
+
+    class Config:
+        from_attributes = True
+
+class GetExpenseDetail(BaseModel):
+    id: int
+    group_id: int | None
+    paid_by: int
+    amount: Decimal
+    description: str | None
+    category: str | None
+    created_at: datetime
+    splits: List[SplitOut]
+
+    class Config:
+        from_attributes = True
+
 class PasswordResetRequest(BaseModel):
     email: EmailStr
 
 class PasswordResetSubmit(BaseModel):
     token: str
     new_password: str
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    otp: str    
+
+
+class BalanceOut(BaseModel):
+    from_user: int
+    to_user: int
+    amount: Decimal

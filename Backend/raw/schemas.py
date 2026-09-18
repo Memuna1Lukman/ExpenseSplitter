@@ -158,3 +158,26 @@ class BalanceOut(BaseModel):
     from_user: int
     to_user: int
     amount: Decimal
+
+
+class InitiateMomoPayment(BaseModel):
+    group_id: Optional[int] = None
+    paid_to: int
+    amount: Decimal
+    phone_number: str   # the payer's MoMo number (use a MTN test number for now)
+    note: Optional[str] = None
+
+
+class PaymentOut(BaseModel):
+    id: int
+    group_id: Optional[int]
+    paid_by: int
+    paid_to: int
+    amount: Decimal
+    provider: Optional[str]
+    provider_reference_id: Optional[str]
+    status: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True    

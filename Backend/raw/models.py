@@ -74,11 +74,10 @@ class Payments(Base):
     paid_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     paid_to = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     amount = Column(DECIMAL(10, 2), nullable=False)
+    provider = Column(String, nullable=True)              # "momo" or "stripe"
+    provider_reference_id = Column(String, nullable=True) # the UUID from request_to_pay
+    status = Column(String, nullable=False, server_default="pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    group = relationship("Groups")
-    payer = relationship("Users", foreign_keys=[paid_by])
-    payee = relationship("Users", foreign_keys=[paid_to])
 
 
 # class Balances(Base):

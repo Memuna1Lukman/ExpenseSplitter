@@ -12,7 +12,7 @@ async def get_access_token() -> str:
         response = await client.post(
             url,
             auth = (settings.momo_api_user,settings.momo_api_key),
-            headers={"Ocp-Apim-Subscription-Key": settings.momo_subcription_key}
+            headers={"Ocp-Apim-Subscription-Key": settings.momo_subscription_key}
         )
         response.raise_for_status()
         return response.json()["access_token"]
@@ -31,7 +31,7 @@ async def request_to_pay(amount: str, phone_number: str, payer_message: str, pay
                 "Authorization": f"Bearer {token}",
                 "X-Reference-Id": reference_id,
                 "X-Target-Environment": settings.momo_target_env,
-                "Ocp-Apim-Subscription-Key": settings.momo_subcription_key,
+                "Ocp-Apim-Subscription-Key": settings.momo_subscription_key,
                 "Content-Type": "application/json"
             },
             json={
@@ -61,7 +61,7 @@ async def check_payment_status(reference_id: str) -> dict:
             headers={
                 "Authorization": f"Bearer {token}",
                 "X-Target-Environment": settings.momo_target_env,
-                "Ocp-Apim-Subscription-Key": settings.momo_subcription_key
+                "Ocp-Apim-Subscription-Key": settings.momo_subscription_key
             }
         )
         response.raise_for_status()

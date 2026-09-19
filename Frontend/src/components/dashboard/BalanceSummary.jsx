@@ -1,0 +1,3 @@
+import { ArrowDownLeft, ArrowUpRight, Scale } from 'lucide-react'
+import { StatCard } from '../ui/StatCard'
+export function BalanceSummary({ total, owe, owed }) { return <div className="grid gap-3 sm:grid-cols-3"><StatCard label="Total balance" value={`${total >= 0 ? '+' : '-'}$${Math.abs(total).toFixed(2)}`} note={total >= 0 ? 'You are owed overall' : 'You owe overall'} icon={Scale} tone={total >= 0 ? 'green' : 'orange'}/><StatCard label="You owe" value={`$${owe.toFixed(2)}`} note="Across 3 people" icon={ArrowUpRight} tone="orange"/><StatCard label="You are owed" value={`$${owed.toFixed(2)}`} note="Across 2 people" icon={ArrowDownLeft} tone="green"/></div> }

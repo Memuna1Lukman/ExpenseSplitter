@@ -1,0 +1,1 @@
+export function Avatar({ initials, color = '#cfe0d3', size = 'md' }) { const dimensions = size === 'sm' ? 'h-7 w-7 text-[10px]' : size === 'lg' ? 'h-12 w-12 text-sm' : 'h-9 w-9 text-xs'; return <span className={`${dimensions} inline-flex shrink-0 items-center justify-center rounded-full font-bold text-[#294135]`} style={{ backgroundColor: color }}>{initials}</span> }

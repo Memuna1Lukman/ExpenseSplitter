@@ -19,8 +19,7 @@ class Settings(BaseSettings):
     momo_api_key: str
     momo_base_url: str
     momo_target_env:str
-    redis_host: str = "localhost"
-    redis_port: int = 6379
+    redis_url: str = "redis://localhost:6379"
     model_config = {'env_file': '.env'}
 
 

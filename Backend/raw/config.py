@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     database_name: str
     database_username: str
     database_password:str
-    database_port: str
+    database_port: str="5432"
     secret_key: str
     algorithm: str
     access_token_expire_minutes:int
@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     momo_api_key: str
     momo_base_url: str
     momo_target_env:str
+    redis_host: str = "localhost"
+    redis_port: int = 6379
     model_config = {'env_file': '.env'}
 
 

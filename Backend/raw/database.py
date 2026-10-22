@@ -5,10 +5,14 @@ from .config import settings
 import redis.asyncio as redis
 
 # Connect to local Redis instance (default port 6379)
-redis_client = redis.Redis(host=settings.database_hostname, port=6379, db=0, decode_responses=True)
 
-SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
+redis_client = redis.Redis(host=settings.redis_host, port=settings.redis_port, db=0, decode_responses=True)
 
+SQLALCHEMY_DATABASE_URL = (
+    f'postgresql://{settings.database_username}:{settings.database_password}'
+    f'@{settings.database_hostname}:{settings.database_port}/{settings.database_name}'
+    f'?sslmode=require'
+)
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

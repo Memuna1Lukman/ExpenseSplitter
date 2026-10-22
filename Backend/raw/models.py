@@ -80,16 +80,16 @@ class Payments(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# class Balances(Base):
-#     __tablename__ = "balances"
+class Balances(Base):
+    __tablename__ = "balances"
 
-#     id = Column(Integer, primary_key=True)
-#     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-#     owes_to_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-#     amount = Column(DECIMAL(10, 2), nullable=False)
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    owes_to_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(DECIMAL(10, 2), nullable=False)
 
-#     user = relationship("Users", foreign_keys=[user_id])
-#     owed_to = relationship("Users", foreign_keys=[owes_to_user_id])
+    user = relationship("Users", foreign_keys=[user_id])
+    owed_to = relationship("Users", foreign_keys=[owes_to_user_id])
 
 
 class Invitation(Base):

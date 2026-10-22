@@ -1,9 +1,9 @@
 from fastapi import APIRouter,Depends,HTTPException,status
-from .. import models,schemas,oauth
-from ..database import get_db
+import models,schemas,oauth
+from database import get_db
 from sqlalchemy.orm import Session
 from typing import List
-from ..split_expense import calculate_splits
+from split_expense import calculate_splits
 
 
 router = APIRouter(

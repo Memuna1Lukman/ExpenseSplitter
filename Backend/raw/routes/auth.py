@@ -6,9 +6,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from .. import models, utils, schemas, oauth
-from ..database import get_db, redis_client
-from ..config import settings
+import models, utils, schemas, oauth
+from database import get_db, redis_client
+from config import settings
 
 router = APIRouter(
     tags=["Authentication"],

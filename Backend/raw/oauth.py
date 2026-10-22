@@ -1,10 +1,10 @@
-from .config import settings
+from config import settings
 from fastapi import Depends,HTTPException,status
 from fastapi.security import APIKeyCookie
 from jose import JWTError,jwt
-from .database import get_db
+from database import get_db
 from sqlalchemy.orm import Session
-from . import models,schemas
+import models,schemas
 from datetime import timedelta,datetime, timezone
 
 

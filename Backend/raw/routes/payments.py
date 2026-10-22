@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from .. import models, schemas, oauth, momo_client
-from ..database import get_db
+import models, schemas, oauth, momo_client
+from database import get_db
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 

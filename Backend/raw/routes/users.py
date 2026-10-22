@@ -1,7 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException,status
 from sqlalchemy.orm  import Session
-from .. import models,utils,schemas
-from ..database import get_db
+import models,utils,schemas,oauth
+from database import get_db
 from sqlalchemy.exc import IntegrityError
 
 
@@ -28,6 +28,10 @@ def create_users (user:schemas.UserCreate,db:Session = Depends(get_db)):
             detail="User already exist"
         )
     return new_user_obj
+
+@router.get("/me")
+def get_me(current_user:models.Users=Depends(oauth.get_current_user)):
+    return current_user
 
 
 

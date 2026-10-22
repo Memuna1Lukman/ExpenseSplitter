@@ -1,9 +1,9 @@
 from decimal import Decimal,ROUND_HALF_UP
 from typing import List
-from . import schemas,models
+import schemas,models
 from collections import defaultdict
 from sqlalchemy.orm import Session
-from .database import get_db
+from database import get_db
 from fastapi import Depends
 
 

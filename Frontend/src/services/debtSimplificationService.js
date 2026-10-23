@@ -14,11 +14,32 @@ export function simplifyDebts(balances) {
 }
 
 export function calculateBalances(expenses) {
-  const balances = { you: 0, alex: 0, sam: 0, jamie: 0, taylor: 0 }
+  const balances = {}
+  if (!expenses || expenses.length === 0) return balances
+
   expenses.forEach((expense) => {
-    const share = expense.amount / expense.participants.length
-    expense.participants.forEach((person) => { balances[person] -= share })
-    balances[expense.paidBy] += expense.amount
+    const payer = String(expense.paid_by || expense.paidBy || 'you')
+    const amount = Number(expense.amount) || 0
+    if (balances[payer] === undefined) balances[payer] = 0
+    balances[payer] += amount
+
+    if (expense.splits && expense.splits.length > 0) {
+      expense.splits.forEach((split) => {
+        const uid = String(split.user_id)
+        const owed = Number(split.amount_owed) || 0
+        if (balances[uid] === undefined) balances[uid] = 0
+        balances[uid] -= owed
+      })
+    } else if (expense.participants && expense.participants.length > 0) {
+      const share = amount / expense.participants.length
+      expense.participants.forEach((person) => {
+        const pid = String(person)
+        if (balances[pid] === undefined) balances[pid] = 0
+        balances[pid] -= share
+      })
+    } else {
+      balances[payer] -= amount
+    }
   })
   return balances
 }

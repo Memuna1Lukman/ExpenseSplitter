@@ -15,6 +15,7 @@ router = APIRouter(
 @router.post("/",response_model=schemas.PostGroup,status_code=status.HTTP_201_CREATED)
 def create_group(group:schemas.CreateGroup,db:Session = Depends(get_db),current_user:models.Users = Depends(oauth.get_current_user)):
     new_group = group.model_dump()
+    new_group.pop("created_by", None)
     # check whether the person is a user
     check_users = db.query(models.Users).filter(models.Users.id == current_user.id).first()
     if not check_users:
@@ -144,26 +145,32 @@ def create_members(id:int,member:schemas.AddMembers,db:Session = Depends(get_db)
 @router.get("/{id}/members", response_model=List[schemas.PostMembers]) # list all members in a group
 def get_all_memebers(id:int,db:Session = Depends(get_db),current_user:models.Users = Depends(oauth.get_current_user)):
     query_group = db.query(models.GroupMembers).filter(models.GroupMembers.group_id == id).all()
-    if not query_group:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found"
-        )
-    return query_group
+    results = []
+    for m in query_group:
+        u = db.query(models.Users).filter(models.Users.id == m.user_id).first()
+        results.append(schemas.PostMembers(
+            id=m.id,
+            group_id=m.group_id,
+            user_id=m.user_id,
+            username=u.username if u else None,
+            email=u.email if u else None,
+            joined_at=m.joined_at
+        ))
+    return results
 
 # delete or remove a member
 
 
 @router.delete("/{id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def remove_member(id: int, user_id: int, db: Session = Depends(get_db), current_user: models.Users = Depends(oauth.get_current_user)):
-    query_group = db.query(models.GroupMembers).filter(models.GroupMembers.group_id == id).first()
-    if not query_group:
+    group = db.query(models.Groups).filter(models.Groups.id == id).first()
+    if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found"
+            detail="Group not found"
         )
     # allow: the group creator removing anyone, OR a user removing themselves
-    if  current_user.id != query_group.created_by and current_user.id == user_id:
+    if current_user.id != group.created_by and current_user.id != user_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to remove this member")
     membership = db.query(models.GroupMembers).filter(
         models.GroupMembers.group_id == id,

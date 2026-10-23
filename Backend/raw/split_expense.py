@@ -9,18 +9,19 @@ from fastapi import Depends
 
 def calculate_splits(amount:Decimal,split_type:schemas.SplitType,splits:List[schemas.SplitInput])->List[dict]:
     n = len(splits)
+    if n == 0:
+        return []
     if split_type == schemas.SplitType.equal:
         base_share = (amount/n).quantize(Decimal("0.01"),rounding=ROUND_HALF_UP)
-        total_so_far = base_share*n
-        remainder_cents = int(amount - total_so_far)/ Decimal("0.01")
-
+        total_so_far = base_share * n
+        remainder_cents = int(round((amount - total_so_far) * 100))
 
         results = []
-        for i,s in enumerate(splits):
+        for i, s in enumerate(splits):
             share = base_share
-            if i<remainder_cents:
-                share+=Decimal("0.01")
-                results.append({"user_id": s.user_id, "amount_owed": share})
+            if i < remainder_cents:
+                share += Decimal("0.01")
+            results.append({"user_id": s.user_id, "amount_owed": share})
         return results
     elif split_type == schemas.SplitType.exact:
         total = sum(s.value for s in splits)

@@ -1,5 +1,5 @@
-from fastapi import APIRouter,Depends,HTTPException,status
-import models,schemas,oauth
+from fastapi import APIRouter, Depends, HTTPException, status
+import models, schemas, oauth
 from database import get_db
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,20 +12,69 @@ router = APIRouter(
 )
 
 
+def _build_expense_detail(expense: models.Expenses, db: Session) -> schemas.GetExpenseDetail:
+    splits = db.query(models.ExpenseSplit).filter(models.ExpenseSplit.expense_id == expense.id).all()
+    payer = db.query(models.Users).filter(models.Users.id == expense.paid_by).first()
+    group = db.query(models.Groups).filter(models.Groups.id == expense.group_id).first() if expense.group_id else None
+
+    split_outs = []
+    for s in splits:
+        u = db.query(models.Users).filter(models.Users.id == s.user_id).first()
+        split_outs.append(schemas.SplitOut(
+            user_id=s.user_id,
+            amount_owed=s.amount_owed,
+            is_settled=s.is_settled,
+            username=u.username if u else None,
+            email=u.email if u else None
+        ))
+
+    return schemas.GetExpenseDetail(
+        id=expense.id,
+        group_id=expense.group_id,
+        paid_by=expense.paid_by,
+        paid_by_name=payer.username if payer else None,
+        amount=expense.amount,
+        description=expense.description,
+        category=expense.category,
+        created_at=expense.created_at,
+        group_name=group.name if group else None,
+        splits=split_outs
+    )
+
+
+# list all expenses for the current user
+@router.get("/", response_model=List[schemas.GetExpenseDetail])
+def get_my_expenses(
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth.get_current_user)
+):
+    split_expense_ids = [
+        s.expense_id for s in db.query(models.ExpenseSplit.expense_id).filter(
+            models.ExpenseSplit.user_id == current_user.id
+        ).all()
+    ]
+
+    expenses = db.query(models.Expenses).filter(
+        (models.Expenses.paid_by == current_user.id) |
+        (models.Expenses.id.in_(split_expense_ids))
+    ).order_by(models.Expenses.created_at.desc()).all()
+
+    return [_build_expense_detail(exp, db) for exp in expenses]
+
 
 # list all expenses in a group
-@router.get("/{id}/expenses",response_model=List[schemas.PostExpense])
+@router.get("/{id}/expenses", response_model=List[schemas.GetExpenseDetail])
 def list_all_group_expense(
-    id:int,
-    db:Session = Depends(get_db),
-    current_user:models.Users= Depends(oauth.get_current_user)
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth.get_current_user)
 ):
     # does group id exist?
-    group = db.query(models.Groups).filter(models.Groups.id == id).all()
+    group = db.query(models.Groups).filter(models.Groups.id == id).first()
     if not group:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Not found"
+            detail="Group not found"
         )
     # is the person a current member
     is_member = db.query(models.GroupMembers).filter(
@@ -35,19 +84,19 @@ def list_all_group_expense(
     if not is_member:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not a memeber"
+            detail="Not a member of this group"
         )
     
-    # now actually query expenses belonging to this group
-    expenses = db.query(models.Expenses).filter(models.Expenses.group_id == id).all()
-    return expenses
+    expenses = db.query(models.Expenses).filter(models.Expenses.group_id == id).order_by(models.Expenses.created_at.desc()).all()
+    return [_build_expense_detail(exp, db) for exp in expenses]
+
 
 # expense detail (including split breakdown)
-@router.get("/{id}",response_model=schemas.GetExpenseDetail)
+@router.get("/{id}", response_model=schemas.GetExpenseDetail)
 def get_expense(
-    id:int,
-    db:Session = Depends(get_db),
-    current_user:models.Users= Depends(oauth.get_current_user)
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth.get_current_user)
 ):
     expense = db.query(models.Expenses).filter(models.Expenses.id == id).first()
     if not expense:
@@ -61,27 +110,20 @@ def get_expense(
         if not is_member:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not a memeber"
+                detail="Not a member"
             )
     else:
-        # personal expense — only the payer can view it (adjust if the other party should too)
-        if expense.paid_by != current_user.id:
+        # personal expense — check if payer or in splits
+        is_split_user = db.query(models.ExpenseSplit).filter(
+            models.ExpenseSplit.expense_id == expense.id,
+            models.ExpenseSplit.user_id == current_user.id
+        ).first()
+        if expense.paid_by != current_user.id and not is_split_user:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized")
-    splits = db.query(models.ExpenseSplit).filter(models.ExpenseSplit.expense_id == id).all()
-    return schemas.GetExpenseDetail(
-        id=expense.id,
-        group_id=expense.group_id,
-        paid_by=expense.paid_by,
-        amount=expense.amount,
-        description=expense.description,
-        category=expense.category,
-        created_at=expense.created_at,
-        splits=splits
-    )
+
+    return _build_expense_detail(expense, db)
 
 
-
-    
 @router.post("/", response_model=schemas.GetExpenseDetail, status_code=status.HTTP_201_CREATED)
 def create_expense(
     expense: schemas.CreateExpense,
@@ -101,14 +143,27 @@ def create_expense(
         if not is_member:
             raise HTTPException(status_code=403, detail="Not a member of this group")
 
+    # If splits are not provided:
+    splits_to_use = expense.splits or []
+    if not splits_to_use:
+        if expense.group_id is not None:
+            # default: split equally among all members of the group
+            members = db.query(models.GroupMembers).filter(models.GroupMembers.group_id == expense.group_id).all()
+            splits_to_use = [schemas.SplitInput(user_id=m.user_id) for m in members]
+        else:
+            # default: personal expense for the payer
+            splits_to_use = [schemas.SplitInput(user_id=current_user.id)]
+
     # validate no duplicate user_ids
-    user_ids = [s.user_id for s in expense.splits]
+    user_ids = [s.user_id for s in splits_to_use]
     if len(user_ids) != len(set(user_ids)):
         raise HTTPException(status_code=400, detail="Duplicate users in split")
 
+    split_type = expense.split_type or schemas.SplitType.equal
+
     # calculate splits (raises ValueError if exact/percentage don't add up)
     try:
-        calculated_splits = calculate_splits(expense.amount, expense.split_type, expense.splits)
+        calculated_splits = calculate_splits(expense.amount, split_type, splits_to_use)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -117,8 +172,8 @@ def create_expense(
         group_id=expense.group_id,
         paid_by=current_user.id,
         amount=expense.amount,
-        description=expense.description,
-        category=expense.category
+        description=expense.description or "Expense",
+        category=expense.category or "food"
     )
     db.add(new_expense)
     db.flush()  # gets new_expense.id without committing yet
@@ -132,18 +187,8 @@ def create_expense(
             is_settled=False
         ))
 
-     
     db.commit()
     db.refresh(new_expense)
-    splits = db.query(models.ExpenseSplit).filter(models.ExpenseSplit.expense_id == new_expense.id).all()
-    return schemas.GetExpenseDetail(
-        id=new_expense.id,
-        group_id=new_expense.group_id,
-        paid_by=new_expense.paid_by,
-        amount=new_expense.amount,
-        description=new_expense.description,
-        category=new_expense.category,
-        created_at=new_expense.created_at,
-        splits=splits
-    )
+    return _build_expense_detail(new_expense, db)
+
     

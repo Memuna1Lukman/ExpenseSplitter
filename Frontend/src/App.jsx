@@ -6,13 +6,42 @@ import { useAuth } from './hooks/useAuth'
 import './App.css'
 
 export default function App() {
-  const { user, signIn, signUp, signOut } = useAuth()
+  const { user, loading, error, signIn, signUp, signOut, setError } = useAuth()
   const [authMode, setAuthMode] = useState('signin')
   const [screen, setScreen] = useState('landing')
 
   if (!user) {
-    if (screen === 'landing') return <LandingPage onGetStarted={() => { setAuthMode('signup'); setScreen('auth') }} onSignIn={() => { setAuthMode('signin'); setScreen('auth') }} />
-    return <AuthPage mode={authMode} onModeChange={setAuthMode} onSignIn={signIn} onSignUp={signUp} onBack={() => setScreen('landing')} />
+    if (screen === 'landing') {
+      return (
+        <LandingPage
+          onGetStarted={() => {
+            setError(null)
+            setAuthMode('signup')
+            setScreen('auth')
+          }}
+          onSignIn={() => {
+            setError(null)
+            setAuthMode('signin')
+            setScreen('auth')
+          }}
+        />
+      )
+    }
+    return (
+      <AuthPage
+        mode={authMode}
+        onModeChange={(m) => {
+          setError(null)
+          setAuthMode(m)
+        }}
+        onSignIn={signIn}
+        onSignUp={signUp}
+        loading={loading}
+        error={error}
+        onClearError={() => setError(null)}
+        onBack={() => setScreen('landing')}
+      />
+    )
   }
   return <DashboardPage user={user} onSignOut={signOut} />
 }

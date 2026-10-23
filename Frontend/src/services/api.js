@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://expensesplitter-raw-4x4f-9q96ru3ju-munatu-s-projects1.vercel.app",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://expensesplitter-npkq.onrender.com",
 });
 
 // automatically attach the JWT token to every request, if we have one

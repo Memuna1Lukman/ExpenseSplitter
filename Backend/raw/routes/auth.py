@@ -1,7 +1,7 @@
 import urllib.parse
 import secrets
 import httpx
-from fastapi import HTTPException, Depends, status, APIRouter, Response, BackgroundTasks
+from fastapi import HTTPException, Depends, status, APIRouter, Response, BackgroundTasks, Request
 from fastapi.responses import RedirectResponse
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -17,17 +17,38 @@ router = APIRouter(
 
 
 @router.post("/login")
-def login_user(
+async def login_user(
+    request: Request,
     response: Response,
-    user: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    check_user = db.query(models.User).filter(models.User.email == user.username).first()
+    content_type = request.headers.get("content-type", "")
+    username = None
+    password = None
+
+    if "application/json" in content_type:
+        body = await request.json()
+        username = body.get("username") or body.get("email")
+        password = body.get("password")
+    else:
+        form = await request.form()
+        username = form.get("username") or form.get("email")
+        password = form.get("password")
+
+    if not username or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email/username and password are required"
+        )
+
+    check_user = db.query(models.Users).filter(
+        (models.Users.email == username) | (models.Users.username == username)
+    ).first()
     if not check_user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials")
 
-    verify_password = utils.unhash_password(user.password, check_user.password)
-    if not verify_password:
+    is_valid_password = utils.verify_password(password, check_user.password)
+    if not is_valid_password:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid Credentials")
 
     access_token = oauth.create_token(data={"owner_id": check_user.id})
@@ -40,7 +61,16 @@ def login_user(
         max_age=settings.access_token_expire_minutes * 60
     )
 
-    return {"message": "Login successful"}
+    return {
+        "message": "Login successful",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": check_user.id,
+            "email": check_user.email,
+            "username": check_user.username
+        }
+    }
 
 
 @router.post("/logout")
@@ -113,11 +143,11 @@ async def login_with_google(
         username = user_info.get("name") or user_info.get("given_name") or email.split("@")[0]
 
         # C. Find or create user
-        check_user = db.query(models.User).filter(models.User.email == email).first()
+        check_user = db.query(models.Users).filter(models.Users.email == email).first()
         if not check_user:
             random_raw_password = secrets.token_urlsafe(32)
-            random_password = utils.hash_password(random_raw_password)
-            check_user = models.User(email=email, username=username, password=random_password)
+            random_password = utils.get_password_hash(random_raw_password)
+            check_user = models.Users(email=email, username=username, password=random_password)
             db.add(check_user)
             db.commit()
             db.refresh(check_user)
@@ -144,7 +174,7 @@ def forgot_password(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    user = db.query(models.User).filter(models.User.email == body.email).first()
+    user = db.query(models.Users).filter(models.Users.email == body.email).first()
     if user:
         reset_token = oauth.create_password_reset_token(email=user.email)
         reset_link = f"http://127.0.0.1:8000/auth/reset-password?token={reset_token}"
@@ -165,7 +195,7 @@ def reset_password(
     )
     email = oauth.verify_password_reset_token(body.token, invalid_token_exception)
     
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.Users).filter(models.Users.email == email).first()
     if not user:
         raise invalid_token_exception
 
@@ -184,7 +214,7 @@ async def send_otp(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
-    user = db.query(models.User).filter(models.User.email == body.email).first()
+    user = db.query(models.Users).filter(models.Users.email == body.email).first()
     if not user:
         return {"message": "If the account exists, an OTP has been sent."}
 
@@ -224,7 +254,7 @@ async def verify_otp(
     # Delete OTP to prevent replay attacks
     await redis_client.delete(redis_key)
 
-    user = db.query(models.User).filter(models.User.email == body.email).first()
+    user = db.query(models.Users).filter(models.Users.email == body.email).first()
     if user:
         user.is_verified = True
         db.add(user)

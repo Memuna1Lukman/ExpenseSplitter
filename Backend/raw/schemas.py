@@ -25,13 +25,13 @@ class UserOut(BaseModel):
 
 class CreateGroup(BaseModel):
     name: str
-    description: str
-    created_by: int
+    description: Optional[str] = None
+    created_by: Optional[int] = None
 
 class PostGroup(BaseModel):
     id: int
     name: str
-    description: str
+    description: Optional[str] = None
     created_by: int
     created_at: Optional[datetime] = None
     class Config:
@@ -40,7 +40,7 @@ class PostGroup(BaseModel):
 class GetAllGroups(BaseModel):
     id: int
     name: str
-    description: str
+    description: Optional[str] = None
     created_by: int
     created_at: Optional[datetime] = None
     class Config:
@@ -58,6 +58,8 @@ class PostMembers(BaseModel):
     id: int
     group_id : int
     user_id:  int
+    username: Optional[str] = None
+    email: Optional[str] = None
     joined_at: Optional[datetime] = None
     class Config:
         from_attributes = True  # lets Pydantic read from the ORM object
@@ -115,25 +117,29 @@ class CreateExpense(BaseModel):
     amount: Decimal
     description: Optional[str] = None
     category: Optional[str] = None
-    split_type: SplitType
-    splits: List[SplitInput]  # who is involved, and their value if exact/percentage
+    split_type: Optional[SplitType] = SplitType.equal
+    splits: Optional[List[SplitInput]] = None  # who is involved, and their value if exact/percentage
 
 class SplitOut(BaseModel):
     user_id: int
     amount_owed: Decimal
     is_settled: bool
+    username: Optional[str] = None
+    email: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 class GetExpenseDetail(BaseModel):
     id: int
-    group_id: int | None
+    group_id: int | None = None
     paid_by: int
+    paid_by_name: Optional[str] = None
     amount: Decimal
-    description: str | None
-    category: str | None
+    description: str | None = None
+    category: str | None = None
     created_at: datetime
+    group_name: Optional[str] = None
     splits: List[SplitOut]
 
     class Config:

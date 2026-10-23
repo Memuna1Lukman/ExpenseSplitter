@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { Check, X, Loader2 } from 'lucide-react'
 import { Button } from '../ui/Button'
-import { categories } from '../../data/seedData'
+
+// These are presentation choices for the expense form, not seeded application data.
+const categories = [
+  { id: 'food', label: 'Food' },
+  { id: 'travel', label: 'Travel' },
+  { id: 'rent', label: 'Rent' },
+  { id: 'entertainment', label: 'Fun' },
+]
 
 export function AddExpenseModal({ onClose, onSubmit, groups = [], users = [], currentUser }) {
   const [form, setForm] = useState({

@@ -54,6 +54,32 @@ class AddMembers(BaseModel):
     user_id:  int
 
 
+class CreateInvite(BaseModel):
+    email: EmailStr
+
+
+class AcceptInvite(BaseModel):
+    token: str
+
+
+class InviteOut(BaseModel):
+    id: int
+    group_id: int
+    invited_email: EmailStr
+    invited_by: int
+    status: str
+    created_at: datetime | None = None
+    expires_at: datetime
+    accepted_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class CreateInviteOut(InviteOut):
+    accept_url: str
+
+
 class PostMembers(BaseModel):
     id: int
     group_id : int
@@ -186,4 +212,4 @@ class PaymentOut(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True    
+        from_attributes = True

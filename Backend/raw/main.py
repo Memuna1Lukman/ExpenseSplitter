@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from fastapi import FastAPI, Response
 import models
 from database import engine
-from routes import auth, users, groups, expenses, payments
+from routes import auth, users, groups, expenses, payments, invites
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -31,4 +31,4 @@ app.include_router(users.router)
 app.include_router(groups.router)
 app.include_router(expenses.router)
 app.include_router(payments.router)
-
+app.include_router(invites.router)

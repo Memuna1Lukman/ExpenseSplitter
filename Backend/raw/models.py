@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, DateTime, DECIMAL, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from database import Base
+from .database import Base
 
 
 class Users(Base):
@@ -101,8 +101,11 @@ class Invitation(Base):
     group_id = Column(Integer, ForeignKey("groups.id", ondelete="CASCADE"), nullable=False)
     invited_email = Column(String, nullable=False)
     invited_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String, unique=True, nullable=False, index=True)
     status = Column(String, nullable=False, server_default="pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
 
     group = relationship("Groups")
     inviter = relationship("Users")

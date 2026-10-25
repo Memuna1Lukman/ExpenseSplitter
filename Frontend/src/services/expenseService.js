@@ -33,8 +33,17 @@ export const addGroupMember = async (groupId, userId) => {
   return response.data;
 };
 
+export const createGroupInvite = async (groupId, email) => {
+  const response = await api.post(`/groups/${groupId}/invites`, { email });
+  return response.data;
+};
+
+export const acceptGroupInvite = async (token) => {
+  const response = await api.post('/invites/accept', { token });
+  return response.data;
+};
+
 export const getUsers = async () => {
   const response = await api.get("/users/");
   return response.data;
 };
-

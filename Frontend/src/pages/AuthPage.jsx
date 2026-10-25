@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrowRight, Check, CircleDollarSign, Eye, EyeOff, Sparkles, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 
-export function AuthPage({ mode, onModeChange, onSignIn, onSignUp, loading, error, onClearError }) {
+export function AuthPage({ mode, onModeChange, onSignIn, onSignUp, loading, error, onClearError, invitePending = false }) {
   const isSignUp = mode === 'signup'
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -82,7 +82,9 @@ export function AuthPage({ mode, onModeChange, onSignIn, onSignUp, loading, erro
               {isSignUp ? 'Create your account' : 'Sign in to Splitwise'}
             </h2>
             <p className="mt-2 text-sm text-[#89968d]">
-              {isSignUp
+              {invitePending
+                ? 'Sign in or create an account with the email address that received the invite.'
+                : isSignUp
                 ? 'It only takes a minute to get started.'
                 : 'Your shared expenses are waiting for you.'}
             </p>

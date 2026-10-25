@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     momo_base_url: str
     momo_target_env:str
     redis_url: str = "redis://localhost:6379"
+    frontend_url: str = "http://localhost:5173"
     model_config = {'env_file': '.env'}
 
 
@@ -28,4 +29,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-

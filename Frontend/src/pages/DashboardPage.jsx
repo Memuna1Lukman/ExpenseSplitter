@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Plus, UsersRound, ContactRound, X, FolderPlus } from 'lucide-react'
+import { Plus, UsersRound, ContactRound, X, FolderPlus, UserPlus } from 'lucide-react'
 import { AppSidebar } from '../components/layout/AppSidebar'
 import { Topbar } from '../components/layout/Topbar'
 import { BalanceSummary } from '../components/dashboard/BalanceSummary'
 import { DebtSimplificationCard } from '../components/dashboard/DebtSimplificationCard'
 import { ExpenseList } from '../components/expenses/ExpenseList'
 import { AddExpenseModal } from '../components/expenses/AddExpenseModal'
+import { InviteMemberModal } from '../components/groups/InviteMemberModal'
 import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
 import { useExpenses } from '../hooks/useExpenses'
@@ -116,6 +117,7 @@ export function DashboardPage({ user, onSignOut }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [groupModalOpen, setGroupModalOpen] = useState(false)
+  const [inviteGroup, setInviteGroup] = useState(null)
 
   const {
     expenses,
@@ -320,6 +322,13 @@ export function DashboardPage({ user, onSignOut }) {
                           </p>
                         </div>
                       </div>
+                      <Button
+                        variant="secondary"
+                        className="mt-3 w-full"
+                        onClick={() => setInviteGroup(group)}
+                      >
+                        <UserPlus size={16} /> Invite member
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -379,6 +388,13 @@ export function DashboardPage({ user, onSignOut }) {
             <CreateGroupModal
               onClose={() => setGroupModalOpen(false)}
               onSubmit={addGroup}
+            />
+          )}
+
+          {inviteGroup && (
+            <InviteMemberModal
+              group={inviteGroup}
+              onClose={() => setInviteGroup(null)}
             />
           )}
         </main>

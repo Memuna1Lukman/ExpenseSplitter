@@ -1,11 +1,7 @@
-import sys
-import os
-sys.path.insert(0, os.path.dirname(__file__))
-
 from fastapi import FastAPI, Response
-import models
-from database import engine
-from routes import auth, users, groups, expenses, payments, invites
+from . import models
+from .database import engine
+from .routes import auth, users, groups, expenses, payments, invites
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-import models, schemas, oauth
-from database import get_db
+from .. import models, schemas, oauth
+from ..database import get_db
 from sqlalchemy.orm import Session
 from typing import List
-from split_expense import calculate_splits
+from ..split_expense import calculate_splits
 
 
 router = APIRouter(
@@ -86,7 +86,7 @@ def list_all_group_expense(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not a member of this group"
         )
-    
+
     expenses = db.query(models.Expenses).filter(models.Expenses.group_id == id).order_by(models.Expenses.created_at.desc()).all()
     return [_build_expense_detail(exp, db) for exp in expenses]
 
@@ -190,5 +190,3 @@ def create_expense(
     db.commit()
     db.refresh(new_expense)
     return _build_expense_detail(new_expense, db)
-
-    

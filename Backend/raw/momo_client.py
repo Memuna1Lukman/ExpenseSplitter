@@ -1,6 +1,6 @@
 import uuid
 import httpx
-from config import settings
+from .config import settings
 
 
 

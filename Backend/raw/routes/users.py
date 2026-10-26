@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import models, utils, schemas, oauth
-from database import get_db
+from .. import models, utils, schemas, oauth
+from ..database import get_db
 from sqlalchemy.exc import IntegrityError
 
 
@@ -42,4 +42,3 @@ def get_all_users(
 ):
     users = db.query(models.Users).all()
     return users
-

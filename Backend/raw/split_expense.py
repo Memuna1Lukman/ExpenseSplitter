@@ -1,9 +1,9 @@
 from decimal import Decimal,ROUND_HALF_UP
 from typing import List
-import schemas,models
+from . import schemas, models
 from collections import defaultdict
 from sqlalchemy.orm import Session
-from database import get_db
+from .database import get_db
 from fastapi import Depends
 
 
@@ -89,6 +89,5 @@ def simplify_balances(net: dict) -> list[dict]:
         # if final == 0, they're settled up — skip
 
     return result    
-
 
 

@@ -174,7 +174,7 @@ export function DashboardPage({ user, onSignOut }) {
           user={user}
         />
 
-        <main className="mx-auto w-full max-w-[1360px] flex-1 p-5 lg:p-9">
+        <main className="mx-auto w-full max-w-340 flex-1 p-5 lg:p-9">
           {activeView === 'dashboard' ? (
             <div className="fade-up space-y-6">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
